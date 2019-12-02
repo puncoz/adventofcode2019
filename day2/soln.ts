@@ -44,10 +44,38 @@ export default async () => {
         throw new Error("Something went wrong.")
     }
 
-    input[1] = 12
-    input[2] = 2
+    const inputForFirstPart = [...input]
+    inputForFirstPart[1] = 12
+    inputForFirstPart[2] = 2
 
-    const output: number[] = intCodeComputer(input)
+    const output: number[] = intCodeComputer(inputForFirstPart)
 
     console.log(`Part I: Value left at position 0 after the program halts = ${output[0]}`)
+
+
+    let isBreak: boolean = false
+    let noun = 0
+    let verb = 0
+    for (let tempNoun = 0; tempNoun <= 99; tempNoun++) {
+        for (let tempVerb = 0; tempVerb <= 99; tempVerb++) {
+            const tempInput = [...input]
+            tempInput[1] = tempNoun
+            tempInput[2] = tempVerb
+
+            const output: number[] = intCodeComputer(tempInput)
+
+            if (output[0] === 19690720) {
+                noun = tempNoun
+                verb = tempVerb
+                isBreak = true
+                break
+            }
+        }
+
+        if (isBreak) {
+            break
+        }
+    }
+
+    console.log(`Part II: ${100 * noun + verb}`)
 }
