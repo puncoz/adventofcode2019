@@ -11,7 +11,7 @@ import { readInputFile } from "../helpers"
 
 export default async () => {
     const inputString: string = await readInputFile(__dirname + "/input.txt")
-    const input: number[] = inputString.split(/[\s]/).map(Number)
+    const input: number[] = inputString.split(/[\s]/).filter((num: string) => !!num).map(Number)
     const fuelCalculator = (mass: number): number => Math.floor(mass / 3) - 2
 
     // Part I
