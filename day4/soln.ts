@@ -6,34 +6,26 @@
  * 
  * @author Puncoz Nepal <github.com/puncoz>
  */
-const checkFirstCondition = (password: number): boolean => {
-    const passwordArray = `${password}`.split("").map(Number);
+const checkCondition = (passcode: number): { first: boolean, second: boolean } => {
+    const passcodeArray = `${passcode}`.split("").map(Number);
 
-    const result = passwordArray.reduce(({ previous, hasAdj, status }, current: number) => ({
-        previous: current,
-        hasAdj: hasAdj ? hasAdj : (previous === current),
-        status: status === false ? false : (current >= previous)
-    }), { previous: 0, hasAdj: false, status: true })
-
-    // console.log(result)
-    return result.status && result.hasAdj
-}
-
-const checkSecondCondition = (password: number): boolean => {
-    const passwordArray = `${password}`.split("").map(Number);
-
-    const result = passwordArray.reduce(({ previous, repeated, status }, current: number) => {
-        repeated[current] = (repeated[current] || 0) + 1
+    const result = passcodeArray.reduce((res, current: number) => {
+        res.repeatedCount[current] = (res.repeatedCount[current] || 0) + 1
 
         return {
             previous: current,
-            repeated,
-            status: status === false ? false : (current >= previous)
+            hasAdj: res.hasAdj ? res.hasAdj : (res.previous === current),
+            isInAsc: res.isInAsc === false ? false : (current >= res.previous),
+            repeatedCount: res.repeatedCount
         }
-    }, { previous: 0, repeated: {}, status: true })
+    }, { previous: 0, hasAdj: false, isInAsc: true, repeatedCount: {} })
 
-    // console.log(result)
-    return result.status && (Object.entries(result.repeated).reduce((status, [key, count]) => status ? true : (count === 2), false))
+    const hasExactDouble: boolean = Object.entries(result.repeatedCount).reduce((hasDouble: boolean, [_, count]): boolean => hasDouble ? true : (count === 2), false)
+
+    return {
+        first: result.isInAsc && result.hasAdj,
+        second: result.isInAsc && hasExactDouble
+    }
 }
 
 
@@ -43,11 +35,13 @@ export default async () => {
     let firstCounter = 0
     let secondCounter = 0
     for (let i = input[0]; i <= input[1]; i++) {
-        if (checkFirstCondition(i)) {
+        const result = checkCondition(i)
+
+        if (result.first) {
             firstCounter++
         }
 
-        if (checkSecondCondition(i)) {
+        if (result.second) {
             secondCounter++
         }
     }
