@@ -9,39 +9,30 @@
 
 import { readInputFile } from "../helpers"
 
-const UP = "U"
-const DOWN = "D"
-const RIGHT = "R"
-const LEFT = "L"
 const MAX = 999999
+const DISTANCE_MAGNITUDE = [
+    { U: 0, D: 0, R: 1, L: -1 },
+    { U: 1, D: -1, R: 0, L: 0 },
+]
 
-const findTravelledPoints = (input: string[]): Array<number>[] => {
-    const travelledPoints: Array<number>[] = []
-    let currentPosition = [0, 0]
-    for (let i = 0; i < input.length; i++) {
-        const nextDirection = input[i]
-        const direction = nextDirection[0]
-        const distance = parseInt(nextDirection.substr(1))
+const findTravelledPoints = (inputArray: string[]): Array<string> => {
+    const travelledPointsString: Array<string> = []
+    let current = [0, 0]
 
-        if ([RIGHT, LEFT].includes(direction)) {
-            for (let j = 1; j <= distance; j++) {
-                const reducer = direction === RIGHT ? currentPosition[0] + 1 : currentPosition[0] - 1
-                travelledPoints.push([reducer, currentPosition[1]])
+    inputArray.forEach((input: string) => {
+        const direction: string = input[0]
+        const distance: number = parseInt(input.substr(1))
 
-                currentPosition[0] = reducer
-            }
-            continue;
+        for (let d = 1; d <= distance; d++) {
+            const x = DISTANCE_MAGNITUDE[0][direction] + current[0]
+            const y = DISTANCE_MAGNITUDE[1][direction] + current[1]
+            current = [x, y]
+
+            travelledPointsString.push(`${x},${y}`)
         }
+    })
 
-        for (let j = 1; j <= distance; j++) {
-            const reducer = direction === UP ? currentPosition[1] + 1 : currentPosition[1] - 1
-            travelledPoints.push([currentPosition[0], reducer])
-
-            currentPosition[1] = reducer
-        }
-    }
-
-    return travelledPoints
+    return travelledPointsString
 }
 
 export default async () => {
@@ -52,19 +43,28 @@ export default async () => {
     const firstTravelledPoints = findTravelledPoints(input[0])
     const secondTravelledPoints = findTravelledPoints(input[1])
 
-    let closestIntersectionDistance = MAX
-    let lowestSteps = MAX
-    for (let i = 0; i < firstTravelledPoints.length; i++) {
-        for (let j = 0; j < secondTravelledPoints.length; j++) {
-            if (firstTravelledPoints[i][0] === secondTravelledPoints[j][0] && firstTravelledPoints[i][1] === secondTravelledPoints[j][1]) {
-                const distance = Math.abs(firstTravelledPoints[i][0]) + Math.abs(firstTravelledPoints[i][1])
-                const steps = i + j + 2
-                lowestSteps = lowestSteps < steps ? lowestSteps : steps
-                closestIntersectionDistance = closestIntersectionDistance < distance ? closestIntersectionDistance : distance
-            }
-        }
+    interface Result {
+        distance: number,
+        steps: number
     }
 
-    console.log(`Part I: Manhattan distance to a closest intersection = ${closestIntersectionDistance}`)
-    console.log(`Part II: Fewest combined steps the wires must take to reach an intersection = ${lowestSteps}`)
+    const result: Result = firstTravelledPoints.reduce((res: Result, point: string, firstIndex: number): Result => {
+        const secondIndex: number = secondTravelledPoints.indexOf(point)
+
+        if (secondIndex >= 0) {
+            const xy = point.split(",").map(Number)
+            const distance = Math.abs(xy[0]) + Math.abs(xy[1])
+            const step = firstIndex + secondIndex + 2
+
+            return {
+                steps: res.steps < step ? res.steps : step,
+                distance: res.distance < distance ? res.distance : distance
+            }
+        }
+
+        return res
+    }, { distance: MAX, steps: MAX })
+
+    console.log(`Part I: Manhattan distance to a closest intersection = ${result.distance}`)
+    console.log(`Part II: Fewest combined steps the wires must take to reach an intersection = ${result.steps}`)
 }
