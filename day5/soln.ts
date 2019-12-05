@@ -9,12 +9,13 @@
 
 import { readInputFile } from "../helpers"
 
-const USER_INPUT = 1
+const FIRST_USER_INPUT = 1
+const SECOND_USER_INPUT = 5
 
 const POSITION = 0
 const IMMEDIATE = 1
 
-const intCodeComputer = (inputArray: number[], currentIndex: number = 0): number[] => {
+const intCodeComputer = (inputArray: number[], currentIndex: number, userInput: number): number[] => {
     const opCode = `${inputArray[currentIndex]}`.padStart(5, "0").split("").map(Number)
 
     if (opCode[4] === 9 && opCode[3] === 9) {
@@ -36,7 +37,7 @@ const intCodeComputer = (inputArray: number[], currentIndex: number = 0): number
         const second = modes[1] === POSITION ? inputArray[secondParam] : secondParam
         inputArray[thirdParam] = first + second
 
-        return intCodeComputer(inputArray, currentIndex + 4)
+        return intCodeComputer(inputArray, currentIndex + 4, userInput)
     }
 
     if (opCode[4] === 2) {
@@ -44,20 +45,56 @@ const intCodeComputer = (inputArray: number[], currentIndex: number = 0): number
         const second = modes[1] === POSITION ? inputArray[secondParam] : secondParam
         inputArray[thirdParam] = first * second
 
-        return intCodeComputer(inputArray, currentIndex + 4)
+        return intCodeComputer(inputArray, currentIndex + 4, userInput)
     }
 
     if (opCode[4] === 3) {
-        inputArray[firstParam] = USER_INPUT
+        inputArray[firstParam] = userInput
 
-        return intCodeComputer(inputArray, currentIndex + 2)
+        return intCodeComputer(inputArray, currentIndex + 2, userInput)
     }
 
     if (opCode[4] === 4) {
         const op = modes[0] === POSITION ? inputArray[firstParam] : firstParam
 
-        console.log(`Output "${op}" for iteration: ${currentIndex}`)
-        return intCodeComputer(inputArray, currentIndex + 2)
+        console.log(`For user input, "${userInput}" , output is "${op}"`)
+        return intCodeComputer(inputArray, currentIndex + 2, userInput)
+    }
+
+    if (opCode[4] === 5) {
+        const first = modes[0] === POSITION ? inputArray[firstParam] : firstParam
+        const second = modes[1] === POSITION ? inputArray[secondParam] : secondParam
+
+        const nextIndex = first !== 0 ? second : currentIndex + 3
+
+        return intCodeComputer(inputArray, nextIndex, userInput)
+    }
+
+    if (opCode[4] === 6) {
+        const first = modes[0] === POSITION ? inputArray[firstParam] : firstParam
+        const second = modes[1] === POSITION ? inputArray[secondParam] : secondParam
+
+        const nextIndex = first === 0 ? second : currentIndex + 3
+
+        return intCodeComputer(inputArray, nextIndex, userInput)
+    }
+
+    if (opCode[4] === 7) {
+        const first = modes[0] === POSITION ? inputArray[firstParam] : firstParam
+        const second = modes[1] === POSITION ? inputArray[secondParam] : secondParam
+
+        inputArray[thirdParam] = first < second ? 1 : 0
+
+        return intCodeComputer(inputArray, currentIndex + 4, userInput)
+    }
+
+    if (opCode[4] === 8) {
+        const first = modes[0] === POSITION ? inputArray[firstParam] : firstParam
+        const second = modes[1] === POSITION ? inputArray[secondParam] : secondParam
+
+        inputArray[thirdParam] = first === second ? 1 : 0
+
+        return intCodeComputer(inputArray, currentIndex + 4, userInput)
     }
 
     throw new Error("Something went wrong." + opCode.join("") + "c: " + currentIndex)
@@ -68,6 +105,8 @@ export default async () => {
     const input: number[] = inputString.split(/[,]/).filter((num: string) => !!num).map(Number)
 
     const inputForFirstPart = [...input]
+    intCodeComputer(inputForFirstPart, 0, FIRST_USER_INPUT)
 
-    const output: number[] = intCodeComputer(inputForFirstPart)
+    const inputForSecondPart = [...input]
+    intCodeComputer(inputForSecondPart, 0, SECOND_USER_INPUT)
 }
