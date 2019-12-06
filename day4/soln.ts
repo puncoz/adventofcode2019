@@ -30,6 +30,7 @@ const checkCondition = (passcode: number): { first: boolean, second: boolean } =
 
 
 export default async () => {
+    console.time("Total execution")
     const input: number[] = [353096, 843212]
 
     let firstCounter = 0
@@ -45,6 +46,7 @@ export default async () => {
             secondCounter++
         }
     }
+    console.timeEnd("Total execution")
 
     console.log(`Part I: ${firstCounter}`)
     console.log(`Part II: ${secondCounter}`)
