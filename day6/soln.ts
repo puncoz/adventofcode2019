@@ -45,6 +45,7 @@ const shortestLengthBetweenTwoNodes = (node1: string, node2: string, inputHashTa
 }
 
 export default async () => {
+    console.time("Initializing")
     const inputString: string = await readInputFile(__dirname + "/input.txt")
     //     const inputString: string = `
     //     COM)B
@@ -64,12 +65,17 @@ export default async () => {
     const inputArray: Array<string[]> = inputString.split(/[\s]/).filter(d => !!d).map((d: string): string[] => d.split(")"))
     const inputHashTable: { string?: string } = inputArray.reduce((hash, [parent, child]) => ({ ...hash, [child]: parent }), {})
     const allObjectList: { string?: boolean } = inputArray.reduce((objects, [parent, child]) => ({ ...objects, [parent]: true, [child]: true }), {})
+    console.timeEnd("Initializing")
 
+    console.time("Part I")
     const totalOrbitsCount = Object.entries(allObjectList).reduce((total, [object]) => {
         return total + orbitCounter(object, inputHashTable)
     }, 0)
+    console.timeEnd("Part I")
 
+    console.time("Part II")
     const shortestLength = shortestLengthBetweenTwoNodes("YOU", "SAN", inputHashTable)
+    console.timeEnd("Part II")
 
     console.log(`Part I: Total direct and indirect orbits count: ${totalOrbitsCount}`)
     console.log(`Part II: Shortest path length between "YOU" and "SAN": ${shortestLength}`)
