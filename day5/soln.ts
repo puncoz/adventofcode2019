@@ -101,12 +101,18 @@ const intCodeComputer = (inputArray: number[], currentIndex: number, userInput: 
 }
 
 export default async () => {
+    console.time("Initializing")
     const inputString: string = await readInputFile(__dirname + "/input.txt")
     const input: number[] = inputString.split(/[,]/).filter((num: string) => !!num).map(Number)
+    console.timeEnd("Initializing")
 
+    console.time("Part I")
     const inputForFirstPart = [...input]
     intCodeComputer(inputForFirstPart, 0, FIRST_USER_INPUT)
+    console.timeEnd("Part I")
 
+    console.time("Part II")
     const inputForSecondPart = [...input]
     intCodeComputer(inputForSecondPart, 0, SECOND_USER_INPUT)
+    console.timeEnd("Part II")
 }
