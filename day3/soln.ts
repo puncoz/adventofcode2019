@@ -36,13 +36,21 @@ const findTravelledPoints = (inputArray: string[]): Array<string> => {
 }
 
 export default async () => {
+    console.time("Initializing")
     const inputString: string = await readInputFile(__dirname + "/input.txt")
     // const inputString = `R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51 U98,R91,D20,R16,D67,R40,U7,R15,U6,R7`
     const input = inputString.split(/[\s]/).filter((num: string) => !!num).map((data: string): string[] => data.split(/[,]/))
+    console.timeEnd("Initializing")
 
+    console.time("firstTravelledPoints")
     const firstTravelledPoints = findTravelledPoints(input[0])
-    const secondTravelledPoints = findTravelledPoints(input[1])
+    console.timeEnd("firstTravelledPoints")
 
+    console.time("secondTravelledPoints")
+    const secondTravelledPoints = findTravelledPoints(input[1])
+    console.timeEnd("secondTravelledPoints")
+
+    console.time("Finding intersection")
     interface Result {
         distance: number,
         steps: number
@@ -64,6 +72,7 @@ export default async () => {
 
         return res
     }, { distance: MAX, steps: MAX })
+    console.timeEnd("Finding intersection")
 
     console.log(`Part I: Manhattan distance to a closest intersection = ${result.distance}`)
     console.log(`Part II: Fewest combined steps the wires must take to reach an intersection = ${result.steps}`)
