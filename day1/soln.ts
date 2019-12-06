@@ -9,21 +9,25 @@
 
 import { readInputFile } from "../helpers"
 
+const fuelCalculator = (mass: number): number => Math.floor(mass / 3) - 2
+
 export default async () => {
+    console.time("Initializing")
     const inputString: string = await readInputFile(__dirname + "/input.txt")
     const input: number[] = inputString.split(/[\s]/).filter((num: string) => !!num).map(Number)
-    const fuelCalculator = (mass: number): number => Math.floor(mass / 3) - 2
+    console.timeEnd("Initializing")
 
-    // Part I
+    console.time("Part I")
     const totalFuel: number = input.reduce((sum: number, moduleMass: number): number => {
         sum += fuelCalculator(moduleMass)
 
         return sum
     }, 0)
+    console.timeEnd("Part I")
 
     console.log(`Part I - Sum of the fuel requirement = ${totalFuel}`)
 
-    // Part II
+    console.time("Part II")
     const totalFuelRecursive: number = input.reduce((sum: number, moduleMass: number): number => {
         const recursiveFuelCalculator = (mass: number, totalFuel: number = 0): number => {
             const fuel = fuelCalculator(mass)
@@ -37,6 +41,7 @@ export default async () => {
 
         return sum + recursiveFuelCalculator(moduleMass)
     }, 0)
+    console.timeEnd("Part II")
 
     console.log(`Part II - Recursive sum of the fuel requirement = ${totalFuelRecursive}`)
 }
