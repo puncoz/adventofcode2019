@@ -1,25 +1,32 @@
 /**
  * CodeOfAdvent - 2019
- * Solution for Day 7
+ * Solution for Day 5
  * 
- * Problem: https://adventofcode.com/2019/day/7
+ * Problem: https://adventofcode.com/2019/day/5
  * 
  * @author Puncoz Nepal <github.com/puncoz>
  */
 
 import { readInputFile } from "../helpers"
 
-const FIRST_USER_INPUT = 1
-const SECOND_USER_INPUT = 5
-
 const POSITION = 0
 const IMMEDIATE = 1
 
-const intCodeComputer = (inputArray: number[], currentIndex: number, userInput: number = undefined, output: (op: number) => void): { input: number[], currentIndex: number, isHalted: boolean } => {
+type UserInputCallback = () => number
+type OutputCallback = (op: number) => void
+
+type IntCodeComputerResponse = {
+    program: number[],
+    currentIndex: number,
+    isHalted: boolean,
+    isPaused: boolean
+}
+
+const intCodeComputer = (inputArray: number[], currentIndex: number, userInput: UserInputCallback, output: OutputCallback): IntCodeComputerResponse => {
     const opCode = `${inputArray[currentIndex]}`.padStart(5, "0").split("").map(Number)
 
     if (opCode[4] === 9 && opCode[3] === 9) {
-        return { input: inputArray, currentIndex, isHalted: true }
+        return { program: inputArray, currentIndex, isHalted: true, isPaused: false }
     }
 
     const modes = [
@@ -49,21 +56,19 @@ const intCodeComputer = (inputArray: number[], currentIndex: number, userInput: 
     }
 
     if (opCode[4] === 3) {
-        if (typeof userInput !== "undefined") {
-            inputArray[firstParam] = userInput
-            return intCodeComputer(inputArray, currentIndex + 2, undefined, output)
+        const input = userInput()
+        if (typeof input === "undefined") {
+            return { program: inputArray, currentIndex, isHalted: false, isPaused: true }
         }
 
-        return { input: inputArray, currentIndex, isHalted: false }
+        inputArray[firstParam] = input
+
+        return intCodeComputer(inputArray, currentIndex + 2, userInput, output)
     }
 
     if (opCode[4] === 4) {
         const op = modes[0] === POSITION ? inputArray[firstParam] : firstParam
-        // return { input: inputArray, currentIndex, isHalted: false }
-
-        // if (op !== 0) {
         output(op)
-        // }
 
         return intCodeComputer(inputArray, currentIndex + 2, userInput, output)
     }
@@ -108,86 +113,95 @@ const intCodeComputer = (inputArray: number[], currentIndex: number, userInput: 
 }
 
 // https://stackoverflow.com/questions/9960908/permutations-in-javascript
-const permute = (ar) =>
-    ar.length === 1 ? ar : ar.reduce((ac, _, i) => { permute([...ar.slice(0, i), ...ar.slice(i + 1)]).map(v => ac.push([].concat(ar[i], v))); return ac; }, []);
+const permutation = (ar: number[]): number[][] =>
+    ar.length === 1 ? ar : ar.reduce((ac, _, i) => { permutation([...ar.slice(0, i), ...ar.slice(i + 1)]).map(v => ac.push([].concat(ar[i], v))); return ac; }, []);
+
+
+const computeForFirstPart = (program: number[]): number => permutation([0, 1, 2, 3, 4]).reduce((output: number, phase: number[]): number => {
+    let amplifierOutput = []
+    for (let i = 0; i < 5; i++) {
+        let isFirstInput = true
+        intCodeComputer([...program], 0, () => {
+            const input = isFirstInput ? phase[i] : (amplifierOutput[i - 1] || 0)
+            isFirstInput = false
+
+            return input
+        }, (op: number) => {
+            amplifierOutput[i] = op
+        })
+    }
+
+    return amplifierOutput[4] > output ? amplifierOutput[4] : output
+}, 0)
+
+const computeForSecondPart = (program: number[]): number => {
+    return permutation([5, 6, 7, 8, 9]).reduce((output: number, phase: number[]): number => {
+        const amplifiers = [
+            { program, currentIndex: 0, input: undefined, isFirstInput: true, isSecondInput: true, output: 0 },
+            { program, currentIndex: 0, input: undefined, isFirstInput: true, isSecondInput: true, output: 0 },
+            { program, currentIndex: 0, input: undefined, isFirstInput: true, isSecondInput: true, output: 0 },
+            { program, currentIndex: 0, input: undefined, isFirstInput: true, isSecondInput: true, output: 0 },
+            { program, currentIndex: 0, input: undefined, isFirstInput: true, isSecondInput: true, output: 0 },
+        ]
+
+        while (true) {
+            let halt = false
+            for (let i = 0; i < 5; i++) {
+                const response = intCodeComputer([...amplifiers[i].program], amplifiers[i].currentIndex, () => {
+                    if (amplifiers[i].isFirstInput) {
+                        amplifiers[i].isFirstInput = false
+
+                        return phase[i]
+                    }
+
+                    if (i === 0 && amplifiers[i].isSecondInput) {
+                        amplifiers[i].isSecondInput = false
+
+                        return 0
+                    }
+
+                    const input = amplifiers[i].input
+                    amplifiers[i].input = undefined
+
+                    return input
+                }, (op: number) => {
+                    amplifiers[i === 4 ? 0 : i + 1].input = op
+                    amplifiers[i].output = op
+                })
+
+                if (response.isHalted) {
+                    halt = true
+                }
+
+                amplifiers[i] = { ...amplifiers[i], program: response.program, currentIndex: response.currentIndex }
+            }
+
+            if (halt) {
+                break
+            }
+        }
+
+        return amplifiers[4].output > output ? amplifiers[4].output : output
+    }, 0)
+}
 
 export default async () => {
     console.time("Initializing")
-    const inputString: string = await readInputFile(__dirname + "/input.txt")
-    // const inputString = `3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5`
-    const input: number[] = inputString.split(/[,]/).filter((num: string) => !!num).map(Number)
+    const programString: string = await readInputFile(__dirname + "/input.txt")
+    // const programString = `3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5`
+    const program: number[] = programString.split(/[,]/).filter((num: string) => !!num).map(Number)
     console.timeEnd("Initializing")
 
+    const outputToThrusters = []
+
+    console.time("Part I")
+    outputToThrusters[0] = computeForFirstPart([...program])
+    console.timeEnd("Part I")
+
     console.time("Part II")
-    const outputToThrusters = permute([5, 6, 7, 8, 9]).reduce((output: number, phase: number) => {
-        console.log(phase.toString())
-        let outputA = 0
-        let amplifierA = intCodeComputer([...input], 0, phase[0], (op: number) => {
-            outputA = op
-        })
-        console.log(JSON.stringify(amplifierA), outputA)
-
-        let outputB = 0
-        let amplifierB = intCodeComputer([...input], 0, phase[1], (op: number) => {
-            outputB = op
-        })
-        console.log(JSON.stringify(amplifierB), outputB)
-
-        let outputC = 0
-        let amplifierC = intCodeComputer([...input], 0, phase[2], (op: number) => {
-            outputC = op
-        })
-        console.log(JSON.stringify(amplifierC), outputC)
-
-        let outputD = 0
-        let amplifierD = intCodeComputer([...input], 0, phase[3], (op: number) => {
-            outputD = op
-        })
-        console.log(JSON.stringify(amplifierD), outputD)
-
-        let outputE = 0
-        let amplifierE = intCodeComputer([...input], 0, phase[4], (op: number) => {
-            outputE = op
-        })
-        console.log(JSON.stringify(amplifierE), outputE)
-
-        let inputA = 0
-        while (true) {
-            amplifierA = intCodeComputer(amplifierA.input, amplifierA.currentIndex, inputA, (op: number) => {
-                outputA = op
-            })
-            console.log(JSON.stringify(amplifierA), outputA)
-
-            amplifierB = intCodeComputer(amplifierB.input, amplifierB.currentIndex, outputA, (op: number) => {
-                outputB = op
-            })
-            console.log(JSON.stringify(amplifierB), outputB)
-
-            amplifierC = intCodeComputer(amplifierC.input, amplifierC.currentIndex, outputB, (op: number) => {
-                outputC = op
-            })
-            console.log(JSON.stringify(amplifierC), outputC)
-
-            amplifierD = intCodeComputer(amplifierD.input, amplifierD.currentIndex, outputC, (op: number) => {
-                outputD = op
-            })
-            console.log(JSON.stringify(amplifierD), outputD)
-
-            amplifierE = intCodeComputer(amplifierE.input, amplifierE.currentIndex, outputD, (op: number) => {
-                outputE = op
-            })
-            console.log(JSON.stringify(amplifierE), outputE)
-
-            if (amplifierA.isHalted || amplifierB.isHalted || amplifierC.isHalted || amplifierD.isHalted || amplifierE.isHalted) {
-                break
-            }
-
-            inputA = outputE
-        }
-
-        return outputE > output ? outputE : output
-    }, 0)
+    outputToThrusters[1] = computeForSecondPart([...program])
     console.timeEnd("Part II")
 
-    console.log(outputToThrusters)
+    console.log(`Highest signal to the thrusters without feedback: ${outputToThrusters[0]}`)
+    console.log(`Highest signal to the thrusters without feedback: ${outputToThrusters[1]}`)
 }

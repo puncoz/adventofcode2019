@@ -9,9 +9,6 @@
 
 import { readInputFile } from "../helpers"
 
-const FIRST_USER_INPUT = 1
-const SECOND_USER_INPUT = 5
-
 const POSITION = 0
 const IMMEDIATE = 1
 
