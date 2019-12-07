@@ -15,11 +15,11 @@ const SECOND_USER_INPUT = 5
 const POSITION = 0
 const IMMEDIATE = 1
 
-const intCodeComputer = (inputArray: number[], currentIndex: number, userInput: number[], output: (op: number) => void, inputIter: number = 0): number[] => {
+const intCodeComputer = (inputArray: number[], currentIndex: number, userInput: number = undefined, output: (op: number) => void): { input: number[], currentIndex: number, isHalted: boolean } => {
     const opCode = `${inputArray[currentIndex]}`.padStart(5, "0").split("").map(Number)
 
     if (opCode[4] === 9 && opCode[3] === 9) {
-        return inputArray
+        return { input: inputArray, currentIndex, isHalted: true }
     }
 
     const modes = [
@@ -37,7 +37,7 @@ const intCodeComputer = (inputArray: number[], currentIndex: number, userInput: 
         const second = modes[1] === POSITION ? inputArray[secondParam] : secondParam
         inputArray[thirdParam] = first + second
 
-        return intCodeComputer(inputArray, currentIndex + 4, userInput, output, inputIter)
+        return intCodeComputer(inputArray, currentIndex + 4, userInput, output)
     }
 
     if (opCode[4] === 2) {
@@ -45,21 +45,27 @@ const intCodeComputer = (inputArray: number[], currentIndex: number, userInput: 
         const second = modes[1] === POSITION ? inputArray[secondParam] : secondParam
         inputArray[thirdParam] = first * second
 
-        return intCodeComputer(inputArray, currentIndex + 4, userInput, output, inputIter)
+        return intCodeComputer(inputArray, currentIndex + 4, userInput, output)
     }
 
     if (opCode[4] === 3) {
-        inputArray[firstParam] = userInput[inputIter]
-        inputIter++
+        if (typeof userInput !== "undefined") {
+            inputArray[firstParam] = userInput
+            return intCodeComputer(inputArray, currentIndex + 2, undefined, output)
+        }
 
-        return intCodeComputer(inputArray, currentIndex + 2, userInput, output, inputIter)
+        return { input: inputArray, currentIndex, isHalted: false }
     }
 
     if (opCode[4] === 4) {
         const op = modes[0] === POSITION ? inputArray[firstParam] : firstParam
+        // return { input: inputArray, currentIndex, isHalted: false }
 
+        // if (op !== 0) {
         output(op)
-        return intCodeComputer(inputArray, currentIndex + 2, userInput, output, inputIter)
+        // }
+
+        return intCodeComputer(inputArray, currentIndex + 2, userInput, output)
     }
 
     if (opCode[4] === 5) {
@@ -68,7 +74,7 @@ const intCodeComputer = (inputArray: number[], currentIndex: number, userInput: 
 
         const nextIndex = first !== 0 ? second : currentIndex + 3
 
-        return intCodeComputer(inputArray, nextIndex, userInput, output, inputIter)
+        return intCodeComputer(inputArray, nextIndex, userInput, output)
     }
 
     if (opCode[4] === 6) {
@@ -77,7 +83,7 @@ const intCodeComputer = (inputArray: number[], currentIndex: number, userInput: 
 
         const nextIndex = first === 0 ? second : currentIndex + 3
 
-        return intCodeComputer(inputArray, nextIndex, userInput, output, inputIter)
+        return intCodeComputer(inputArray, nextIndex, userInput, output)
     }
 
     if (opCode[4] === 7) {
@@ -86,7 +92,7 @@ const intCodeComputer = (inputArray: number[], currentIndex: number, userInput: 
 
         inputArray[thirdParam] = first < second ? 1 : 0
 
-        return intCodeComputer(inputArray, currentIndex + 4, userInput, output, inputIter)
+        return intCodeComputer(inputArray, currentIndex + 4, userInput, output)
     }
 
     if (opCode[4] === 8) {
@@ -95,7 +101,7 @@ const intCodeComputer = (inputArray: number[], currentIndex: number, userInput: 
 
         inputArray[thirdParam] = first === second ? 1 : 0
 
-        return intCodeComputer(inputArray, currentIndex + 4, userInput, output, inputIter)
+        return intCodeComputer(inputArray, currentIndex + 4, userInput, output)
     }
 
     throw new Error("Something went wrong." + opCode.join("") + "c: " + currentIndex)
@@ -108,39 +114,80 @@ const permute = (ar) =>
 export default async () => {
     console.time("Initializing")
     const inputString: string = await readInputFile(__dirname + "/input.txt")
+    // const inputString = `3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5`
     const input: number[] = inputString.split(/[,]/).filter((num: string) => !!num).map(Number)
     console.timeEnd("Initializing")
 
-    console.time("Part I")
-    const outputToThrusters = permute([0, 1, 2, 3, 4]).reduce((output, phase) => {
+    console.time("Part II")
+    const outputToThrusters = permute([5, 6, 7, 8, 9]).reduce((output: number, phase: number) => {
+        console.log(phase.toString())
         let outputA = 0
-        intCodeComputer([...input], 0, [phase[0], 0], (op: number) => {
+        let amplifierA = intCodeComputer([...input], 0, phase[0], (op: number) => {
             outputA = op
         })
+        console.log(JSON.stringify(amplifierA), outputA)
 
         let outputB = 0
-        intCodeComputer([...input], 0, [phase[1], outputA], (op: number) => {
+        let amplifierB = intCodeComputer([...input], 0, phase[1], (op: number) => {
             outputB = op
         })
+        console.log(JSON.stringify(amplifierB), outputB)
 
         let outputC = 0
-        intCodeComputer([...input], 0, [phase[2], outputB], (op: number) => {
+        let amplifierC = intCodeComputer([...input], 0, phase[2], (op: number) => {
             outputC = op
         })
+        console.log(JSON.stringify(amplifierC), outputC)
 
         let outputD = 0
-        intCodeComputer([...input], 0, [phase[3], outputC], (op: number) => {
+        let amplifierD = intCodeComputer([...input], 0, phase[3], (op: number) => {
             outputD = op
         })
+        console.log(JSON.stringify(amplifierD), outputD)
 
         let outputE = 0
-        intCodeComputer([...input], 0, [phase[4], outputD], (op: number) => {
+        let amplifierE = intCodeComputer([...input], 0, phase[4], (op: number) => {
             outputE = op
         })
+        console.log(JSON.stringify(amplifierE), outputE)
+
+        let inputA = 0
+        while (true) {
+            amplifierA = intCodeComputer(amplifierA.input, amplifierA.currentIndex, inputA, (op: number) => {
+                outputA = op
+            })
+            console.log(JSON.stringify(amplifierA), outputA)
+
+            amplifierB = intCodeComputer(amplifierB.input, amplifierB.currentIndex, outputA, (op: number) => {
+                outputB = op
+            })
+            console.log(JSON.stringify(amplifierB), outputB)
+
+            amplifierC = intCodeComputer(amplifierC.input, amplifierC.currentIndex, outputB, (op: number) => {
+                outputC = op
+            })
+            console.log(JSON.stringify(amplifierC), outputC)
+
+            amplifierD = intCodeComputer(amplifierD.input, amplifierD.currentIndex, outputC, (op: number) => {
+                outputD = op
+            })
+            console.log(JSON.stringify(amplifierD), outputD)
+
+            amplifierE = intCodeComputer(amplifierE.input, amplifierE.currentIndex, outputD, (op: number) => {
+                outputE = op
+            })
+            console.log(JSON.stringify(amplifierE), outputE)
+
+            if (amplifierA.isHalted || amplifierB.isHalted || amplifierC.isHalted || amplifierD.isHalted || amplifierE.isHalted) {
+                break
+            }
+
+            inputA = outputE
+        }
 
         return outputE > output ? outputE : output
     }, 0)
-    console.timeEnd("Part I")
+    console.timeEnd("Part II")
 
     console.log(outputToThrusters)
 }
