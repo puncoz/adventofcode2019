@@ -203,5 +203,5 @@ export default async () => {
     console.timeEnd("Part II")
 
     console.log(`Highest signal to the thrusters without feedback: ${outputToThrusters[0]}`)
-    console.log(`Highest signal to the thrusters without feedback: ${outputToThrusters[1]}`)
+    console.log(`Highest signal to the thrusters with feedback: ${outputToThrusters[1]}`)
 }
