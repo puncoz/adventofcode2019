@@ -86,10 +86,12 @@ export default async () => {
     console.time("Part I")
     const layerWithLessZero = layersWithLessDigits(layers, "0")
     console.timeEnd("Part I")
+    console.log(`Part I: ${layerWithLessZero["1"] * layerWithLessZero["2"]}\n\n`)
+
 
     console.time("Part II")
     const image = imageDecoder(layers)
-    console.log("PArt II:")
+    console.log("Part II:")
     renderImage(image, [25, 6])
     console.timeEnd("Part II")
 }
