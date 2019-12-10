@@ -8,69 +8,71 @@
  */
 
 import { readInputFile } from "../helpers"
-import { strict } from "assert"
 
 const ASTEROID = "#"
 const EMPTY = "."
 
-const DIRECTIONS = {
-    R: [1, 0],
-    L: [-1, 0],
-    T: [0, 1],
-    D: [0, -1],
-    RT: [1, 1],
-    LT: [-1, 1],
-    RD: [1, -1],
-    LD: [-1, -1],
-}
-
 const extractAsteroids = (space: string[][]): string[] => {
-    const asteroids = []
-    space.forEach((asteroidsLine: string[], xIndex: number) => asteroidsLine.forEach((asteroid: string, yIndex) => {
-        if (asteroid === ASTEROID) {
-            asteroids.push(`${xIndex},${yIndex}`)
-        }
-    }))
+    return space.reduce((asteroids: string[], asteroidsInLine: string[], yIndex: number) => {
+        return asteroidsInLine.reduce((asteroids: string[], asteroid: string, xIndex: number) => {
+            if (asteroid === ASTEROID) {
+                asteroids.push(`${xIndex},${yIndex}`)
 
-    return asteroids
+                return asteroids
+            }
+
+            return asteroids
+        }, asteroids)
+    }, [])
 }
 
-const angleBetweenAsteroids = (asteroidFirst: string, asteroidSecond: string) => {
-    const coordFirst = asteroidFirst.split(",").map(Number)
-    const coordSecond = asteroidSecond.split(",").map(Number)
+const angleBetweenAsteroids = (asteroidFirst: string, asteroidSecond: string): number => {
+    const [x1, y1] = asteroidFirst.split(",").map(Number)
+    const [x2, y2] = asteroidSecond.split(",").map(Number)
 
-    return Math.atan2(coordFirst[0] - coordSecond[0], coordFirst[1] - coordSecond[1])
+    return (Math.atan2(y1 - y2, x1 - x2) * 180) / Math.PI
 }
 
-const counter = (asteroid: string, asteroids: string[]) => {
-    const asteroidAngleOnLOS = []
-    asteroids.forEach((asteroidToCheck: string) => {
-        if (asteroidToCheck === asteroid) {
-            return
+type AsteroidInLOS = { coord: string, angle: number }
+const getAsteroidsInLOS = (monitoringAsteroid: string, asteroids: string[]): AsteroidInLOS[] => {
+    return asteroids.reduce((asteroidsInLOS: AsteroidInLOS[], asteroid: string) => {
+        if (asteroid === monitoringAsteroid) {
+            return asteroidsInLOS
         }
-        const angle = angleBetweenAsteroids(asteroidToCheck, asteroid)
-        if (asteroidAngleOnLOS.indexOf(angle) === -1) {
-            asteroidAngleOnLOS.push(angle)
-        }
-    })
 
-    return asteroidAngleOnLOS.length
+        const angle: number = angleBetweenAsteroids(monitoringAsteroid, asteroid)
+        const isBlocked = asteroidsInLOS.find((asteroidInLOS: AsteroidInLOS) => asteroidInLOS.angle === angle)
+
+        if (!isBlocked) {
+            asteroidsInLOS.push({
+                coord: asteroid,
+                angle: angle
+            })
+        }
+
+        return asteroidsInLOS
+    }, [])
 }
 
-const asteroidsOnLOS = (asteroids: string[]) => {
-    return asteroids.map((asteroid: string) => {
-        return counter(asteroid, asteroids)
-    })
+type MonitoringStation = { losAsteroidsCount: number, coord: string }
+const monitoringStationFinder = (asteroids: string[]): MonitoringStation => {
+    return asteroids.reduce((monitoringStation: MonitoringStation, asteroid: string) => {
+        const count = getAsteroidsInLOS(asteroid, asteroids).length
+
+        return monitoringStation.losAsteroidsCount > count ? monitoringStation : { losAsteroidsCount: count, coord: asteroid }
+    }, { losAsteroidsCount: 0, coord: "" })
+}
+
+const asteroidsVaporizedAtNth = (asteroids: string[], monitoringStation: string, n: number): AsteroidInLOS => {
+    const asteroidsInLOS = getAsteroidsInLOS(monitoringStation, asteroids).sort((a, b) => (a.angle - b.angle === 0 ? a.angle - b.angle : a.angle - b.angle))
+    const asteroidIndexAtUp = asteroidsInLOS.findIndex(asteroid => asteroid.angle === 90)
+
+    return asteroidsInLOS[n - 1 + asteroidIndexAtUp - asteroidsInLOS.length]
 }
 
 export default async () => {
     console.time("Initializing")
     const inputString: string = await readInputFile(__dirname + "/input.txt")
-    // const inputString = `.#..#
-    //                     .....
-    //                     #####
-    //                     ....#
-    //                     ...##`
     const input: string[][] = inputString.split(/[\s]/).filter((ast: string) => !!ast).map(ast => ast.split(""))
     console.timeEnd("Initializing")
 
@@ -79,10 +81,15 @@ export default async () => {
     console.timeEnd("Extracting Asteroids")
 
     console.time("Counting Asteroids with LOS")
-    const maxCount = asteroidsOnLOS(asteroids).reduce((max, count: number) => {
-        return max > count ? max : count
-    }, 0)
+    const monitoringStation = monitoringStationFinder(asteroids)
     console.timeEnd("Counting Asteroids with LOS")
 
-    console.log(maxCount)
+    console.log(`Part I: No. of LOS = ${monitoringStation.losAsteroidsCount} for Station at ${monitoringStation.coord}`)
+
+    console.time("Vaporization")
+    const { coord } = asteroidsVaporizedAtNth(asteroids, monitoringStation.coord, 200)
+    console.timeEnd("Vaporization")
+
+    const [x, y] = coord.split(",").map(Number)
+    console.log(`Part II: Asteroids vaporized at 200th number is at coord: ${coord}, and answer is: ${x * 100 + y}`)
 }
