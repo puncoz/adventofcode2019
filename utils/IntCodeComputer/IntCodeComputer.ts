@@ -26,8 +26,8 @@ export interface IntCodeComputerParams {
     program: number[]
     pointer?: number
     relativeBase?: number
-    input: InputCallback
-    output: OutputCallback
+    input?: InputCallback
+    output?: OutputCallback
     verbose?: boolean
 }
 
@@ -57,8 +57,8 @@ class IntCodeComputer {
         this.program = computerParams.program
         this.pointer = computerParams.pointer || 0
         this.relativeBase = computerParams.relativeBase || 0
-        this.input = computerParams.input
-        this.output = computerParams.output
+        this.input = computerParams.input || (() => undefined)
+        this.output = computerParams.output || ((op: number) => { console.log(`Output: ${op}`) })
         this.verbose = computerParams.verbose || false
 
         this.boot()

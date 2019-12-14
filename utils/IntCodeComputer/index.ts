@@ -1,1 +1,1 @@
-export { default as IntCodeComputer } from "./IntCodeComputer"
+export { default as IntCodeComputer, IntCodeComputerResponse } from "./IntCodeComputer"

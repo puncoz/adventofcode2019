@@ -1,2 +1,2 @@
 export * from "./helpers"
-export { IntCodeComputer } from "./IntCodeComputer"
+export { IntCodeComputer, IntCodeComputerResponse } from "./IntCodeComputer"
