@@ -1,47 +1,46 @@
 /**
  * CodeOfAdvent - 2019
  * Solution for Day 1
- * 
+ *
  * Problem: https://adventofcode.com/2019/day/1
- * 
+ *
  * @author Puncoz Nepal <github.com/puncoz>
  */
 
-import { readInputFile } from "../helpers"
+import { benchmark, readInputFile } from "../utils"
 
 const fuelCalculator = (mass: number): number => Math.floor(mass / 3) - 2
 
+const recursiveFuelCalculator = (mass: number, totalFuel: number = 0): number => {
+    const fuel = fuelCalculator(mass)
+    if (fuel > 0) {
+        totalFuel += fuel
+        return recursiveFuelCalculator(fuel, totalFuel)
+    }
+
+    return totalFuel
+}
+
+const totalFuel = (input: number[], calculator: (mass: number) => number): number => {
+    return input.reduce((sum: number, moduleMass: number): number => {
+        return sum + calculator(moduleMass)
+    }, 0)
+}
+
 export default async () => {
-    console.time("Initializing")
-    const inputString: string = await readInputFile(__dirname + "/input.txt")
-    const input: number[] = inputString.split(/[\s]/).filter((num: string) => !!num).map(Number)
-    console.timeEnd("Initializing")
+    const input: number[] = await benchmark("Initializing", async () => {
+        const inputString: string = await readInputFile(__dirname + "/input.txt")
 
-    console.time("Part I")
-    const totalFuel: number = input.reduce((sum: number, moduleMass: number): number => {
-        sum += fuelCalculator(moduleMass)
+        return inputString.split(/[\s]/).filter((num: string) => !!num).map(Number)
+    })
 
-        return sum
-    }, 0)
-    console.timeEnd("Part I")
+    const totalFuelUsed = await benchmark("Part I", async () => {
+        return totalFuel(input, fuelCalculator)
+    })
+    console.log(`Part I - Sum of the fuel requirement = ${totalFuelUsed}\n`)
 
-    console.log(`Part I - Sum of the fuel requirement = ${totalFuel}`)
-
-    console.time("Part II")
-    const totalFuelRecursive: number = input.reduce((sum: number, moduleMass: number): number => {
-        const recursiveFuelCalculator = (mass: number, totalFuel: number = 0): number => {
-            const fuel = fuelCalculator(mass)
-            if (fuel > 0) {
-                totalFuel += fuel
-                return recursiveFuelCalculator(fuel, totalFuel)
-            }
-
-            return totalFuel
-        }
-
-        return sum + recursiveFuelCalculator(moduleMass)
-    }, 0)
-    console.timeEnd("Part II")
-
+    const totalFuelRecursive: number = await benchmark("Part II", async () => {
+        return totalFuel(input, recursiveFuelCalculator)
+    })
     console.log(`Part II - Recursive sum of the fuel requirement = ${totalFuelRecursive}`)
 }

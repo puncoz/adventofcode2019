@@ -1,4 +1,4 @@
-import { isFileExists } from "./helpers"
+import { isFileExists } from "./utils"
 
 (async () => {
     const day: number = parseInt(process.argv[2])
